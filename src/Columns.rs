@@ -2,9 +2,12 @@ use std::{any::{TypeId, Any}, ops::{Add, Div, Index}, iter::Sum, fmt::format};
 
 
 //region struct
-pub trait IColumn: Index<usize>+ PartialEq + Sized  {
-    fn get_type(self)-> String;
-    fn get_name(self) -> String;
+
+
+
+pub trait IColumn{
+    fn get_type(&self)-> &String;
+    fn get_name(&self) -> &String;
 }
 
 
@@ -34,12 +37,12 @@ impl<T> Column<T> where T: Clone{
       }
 }
 impl<T> IColumn for Column<T> where T: Add + Div{
-    fn get_type(self)-> String {
-        self.typeinfo
+    fn get_type(&self)-> &String {
+        &self.typeinfo
     }
 
-    fn get_name(self) -> String {
-        self.name
+    fn get_name(&self) -> &String {
+        &self.name
     }
 }
 
@@ -118,6 +121,11 @@ mod tests {
         let v2 = Column::fromvec("h1".to_string(), c![x ,for x in 1..99]);
         let sum = v1 + v2;
         assert_eq!(4,sum[1]);
-        
+    }
+
+    #[test]
+    fn test_inv(){
+        let v1: &mut dyn IColumn = &mut Column::fromvec("h1".to_string(), c![x ,for x in 1..99]);
+        assert_eq!("h1",v1.get_name());
     }
 }
