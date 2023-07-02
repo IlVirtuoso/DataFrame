@@ -62,7 +62,7 @@ impl<T> Add for Column<T> where T: Add<Output = T> + Clone{
         let name = format!("{} + {}",self.name,rhs.name);
         let mut data = Vec::<T>::new();
         for i in 0..self.data.len(){
-            data.push(self.data[i] + rhs.data[i]);
+            data.push(self.data[i].clone() + rhs.data[i].clone());
         }
         Column::fromvec(name, data)
     }
@@ -101,7 +101,7 @@ mod tests {
         let col = Column::<i32>::new("test".to_string());
         println!("name {}",col.name);
         println!("type {}", col.typeinfo);
-        let colstring = Column::<Vec<char>>::new("teststring".to_string());
+        let colstring = Column::<String>::new("teststring".to_string());
         println!("typestring {}",colstring.typeinfo);
     }
 
@@ -114,6 +114,10 @@ mod tests {
 
     #[test]
     fn test_sum(){
-
+        let v1 = Column::fromvec("h1".to_string(), c![x ,for x in 1..99]);
+        let v2 = Column::fromvec("h1".to_string(), c![x ,for x in 1..99]);
+        let sum = v1 + v2;
+        assert_eq!(4,sum[1]);
+        
     }
 }
