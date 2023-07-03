@@ -8,7 +8,10 @@ use std::{any::{TypeId, Any}, ops::{Add, Div, Index}, iter::Sum, fmt::format};
 pub trait IColumn{
     fn get_type(&self)-> &String;
     fn get_name(&self) -> &String;
+    fn as_any(&self) -> &dyn Any;
 }
+
+
 
 
 
@@ -20,7 +23,7 @@ pub struct Column<T>{
 //endregion
 
 impl<T> Column<T> where T: Clone{
-      pub fn new(name : String) -> Self{
+      fn new(name : String) -> Self{
             Column { data: Vec::new(), typeinfo: String::from(std::any::type_name::<T>(), ), name}
       }
 
@@ -36,7 +39,8 @@ impl<T> Column<T> where T: Clone{
         Column{data:vec,typeinfo: String::from(std::any::type_name::<T>()),name }
       }
 }
-impl<T> IColumn for Column<T> where T: Add + Div{
+
+impl<T> IColumn for Column<T> where T: Add + Div + 'static {
     fn get_type(&self)-> &String {
         &self.typeinfo
     }
@@ -44,6 +48,12 @@ impl<T> IColumn for Column<T> where T: Add + Div{
     fn get_name(&self) -> &String {
         &self.name
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+
 }
 
 impl<T> PartialEq for Column<T> {
@@ -58,24 +68,28 @@ impl<T> Eq for Column<T> {
 }
 
 impl<T> Add for Column<T> where T: Add<Output = T> + Clone{
-    type Output = Column<T>;
+    type Output = Vec<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
         assert!(self.data.len() == rhs.data.len());
-        let name = format!("{} + {}",self.name,rhs.name);
         let mut data = Vec::<T>::new();
         for i in 0..self.data.len(){
             data.push(self.data[i].clone() + rhs.data[i].clone());
         }
-        Column::fromvec(name, data)
+        data
     }
 }
 
-impl<T> Div for Column<T> where T : Div{
-    type Output = T;
+impl<T> Div for Column<T> where T : Div<Output = T> + Clone{
+    type Output = Vec<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
-        todo!()
+        assert!(self.data.len() == rhs.data.len());
+        let mut data = Vec::<T>::new();
+        for i in 0..self.data.len(){
+            data.push(self.data[i].clone() / rhs.data[i].clone());
+        }
+        data
     }
 
 }
@@ -91,14 +105,12 @@ impl<T> Index<usize> for Column<T>{
 
 
 
-
-
 #[cfg(test)]
 mod tests {
     use cute::c;
 
     use super::*;
-
+    use std::collections::HashMap;
     #[test]
     fn test_type() {
         let col = Column::<i32>::new("test".to_string());
@@ -124,8 +136,26 @@ mod tests {
     }
 
     #[test]
-    fn test_inv(){
+    fn test_inversion(){
         let v1: &mut dyn IColumn = &mut Column::fromvec("h1".to_string(), c![x ,for x in 1..99]);
         assert_eq!("h1",v1.get_name());
+        let v2 = v1.as_any().downcast_ref::<Column<i32>>().unwrap();
+        assert_eq!(1,v2[0]);
     }
+
+    #[test]
+    fn test_div(){
+        let v1 = Column::fromvec("h1".to_string(), c![x ,for x in 1..99]);
+        let v2 = Column::fromvec("h1".to_string(), c![x ,for x in 1..99]);
+        let div = v1 / v2;
+        assert_eq!(1, div[1]);
+    }
+
+    #[test]
+    fn test_object_column(){
+        let v1 = Column::<HashMap<String,String>>::new("headers".to_string());
+        
+        
+    }
+
 }
